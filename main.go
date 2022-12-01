@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 )
@@ -30,6 +29,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Initialized application")
 	a.Run(":8080")
 }

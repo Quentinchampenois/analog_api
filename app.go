@@ -114,7 +114,6 @@ func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Fetching cameras")
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	start, _ := strconv.Atoi(r.FormValue("start"))
 
