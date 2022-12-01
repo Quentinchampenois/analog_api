@@ -31,7 +31,8 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 	a.initializeRoutes()
 }
 func (a *App) Run(addr string) {
-	fmt.Println("Listening on 8080")
+	fmt.Println("Listening on http://localhost:8080/")
+	fmt.Println("Cameras list http://localhost:8080/cameras")
 	log.Fatal(http.ListenAndServe(":8080", a.Router))
 }
 
