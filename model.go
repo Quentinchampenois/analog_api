@@ -17,7 +17,11 @@ type camera struct {
 }
 
 func (c *camera) getCamera(db *sql.DB) error {
-	return db.QueryRow("SELECT id, name, type, focus, film FROM cameras WHERE id=$1", c.ID).Scan(&c.Name, &c.Type, &c.Focus, &c.Film)
+	err := db.QueryRow("SELECT id, name, type, focus, film FROM cameras WHERE id=$1", c.ID).Scan(&c.Name, &c.Type, &c.Focus, &c.Film)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *camera) updateCamera(db *sql.DB) error {

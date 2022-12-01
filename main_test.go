@@ -14,7 +14,9 @@ import (
 
 var a main.App
 
-func testMain(m *testing.M) {
+func TestMain(m *testing.M) {
+	a = main.App{}
+
 	a.Initialize(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
@@ -125,7 +127,8 @@ func TestCreateCamera(t *testing.T) {
 	}
 
 	if m["film"] != 0 {
-		t.Errorf("Expected camera film to be '0'. Got '%v'", m["film"])
+		film, _ := m["film"]
+		t.Errorf("Expected camera film to be '0'. Got '%v'", film)
 	}
 
 	if m["id"] != 1.0 {

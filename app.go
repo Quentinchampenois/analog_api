@@ -20,7 +20,6 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 	connectionString :=
 		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
-	fmt.Print(connectionString)
 	var err error
 	a.DB, err = sql.Open("postgres", connectionString)
 	if err != nil {
@@ -28,11 +27,52 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 	}
 
 	a.Router = mux.NewRouter()
+	a.seed()
 	a.initializeRoutes()
 }
 func (a *App) Run(addr string) {
 	fmt.Println("Listening on 8080")
 	log.Fatal(http.ListenAndServe(":8080", a.Router))
+}
+
+func (a *App) seed() {
+	const tableCreationQuery = `CREATE TABLE IF NOT EXISTS cameras
+(
+    id SERIAL,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    focus TEXT NOT NULL,
+    film INTEGER NOT NULL,
+    CONSTRAINT cameras_pkey PRIMARY KEY (id)
+)`
+
+	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := a.DB.Query("SELECT id, name, type, focus, film FROM cameras LIMIT $1 OFFSET $2", 10, 0)
+	if err != nil {
+		return
+	}
+
+	if !rows.Next() {
+		fmt.Println("Seeding database...")
+		var data = []camera{
+			{Name: "Minolta AF-S", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
+			{Name: "Fujica DL-100", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
+			{Name: "Minolta AF-S 2", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
+		}
+
+		for i := 0; i < len(data); i++ {
+			err := a.DB.QueryRow(
+				"INSERT INTO cameras(name, type, focus, film) VALUES($1, $2, $3, $4) RETURNING id",
+				data[i].Name, data[i].Type, data[i].Focus, data[i].Film)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
 }
 
 func respondWithError(w http.ResponseWriter, statusCode int, message string) {
@@ -51,17 +91,19 @@ func respondWithJSON(w http.ResponseWriter, statusCode int, payload interface{})
 
 func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+
 	id, err := strconv.Atoi(vars["id"])
+	fmt.Println(id)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid camera ID")
 		return
 	}
 
 	c := camera{ID: id}
-	if c.getCamera(a.DB); err != nil {
+	if err := c.getCamera(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			respondWithError(w, http.StatusNotFound, "Camera not found")
+			respondWithError(w, http.StatusNotFound, "Not found")
 		default:
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 		}
