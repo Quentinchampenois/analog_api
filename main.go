@@ -15,17 +15,7 @@ func main() {
 		os.Getenv("DB_NAME"),
 	)
 
-	const tableCreationQuery = `CREATE TABLE IF NOT EXISTS cameras
-(
-    id SERIAL,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    focus TEXT NOT NULL,
-    film INTEGER NOT NULL,
-    CONSTRAINT cameras_pkey PRIMARY KEY (id)
-)`
-
-	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
+	if err := a.DB.AutoMigrate(&camera{}); err != nil {
 		log.Fatal(err)
 	}
 

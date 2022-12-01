@@ -1,11 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,67 +15,26 @@ import (
 
 type App struct {
 	Router *mux.Router
-	DB     *sql.DB
+	DB     *gorm.DB
 }
 
 func (a *App) Initialize(host, port, user, password, dbname string) {
-	connectionString :=
-		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	dsn :=
+		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=Europe/paris", host, port, user, password, dbname)
 
 	var err error
-	a.DB, err = sql.Open("postgres", connectionString)
+	a.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	a.Router = mux.NewRouter()
-	a.seed()
 	a.initializeRoutes()
 }
 func (a *App) Run(addr string) {
 	fmt.Println("Listening on http://localhost:8080/")
 	fmt.Println("Cameras list http://localhost:8080/cameras")
 	log.Fatal(http.ListenAndServe(":8080", a.Router))
-}
-
-func (a *App) seed() {
-	const tableCreationQuery = `CREATE TABLE IF NOT EXISTS cameras
-(
-    id SERIAL,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    focus TEXT NOT NULL,
-    film INTEGER NOT NULL,
-    CONSTRAINT cameras_pkey PRIMARY KEY (id)
-)`
-
-	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
-		log.Fatal(err)
-	}
-
-	rows, err := a.DB.Query("SELECT id, name, type, focus, film FROM cameras LIMIT $1 OFFSET $2", 10, 0)
-	if err != nil {
-		return
-	}
-
-	if !rows.Next() {
-		fmt.Println("Seeding database...")
-		var data = []camera{
-			{Name: "Minolta AF-S", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
-			{Name: "Fujica DL-100", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
-			{Name: "Minolta AF-S 2", Type: "Compact Point & Shoot", Focus: "Autofocus", Film: 0},
-		}
-
-		for i := 0; i < len(data); i++ {
-			err := a.DB.QueryRow(
-				"INSERT INTO cameras(name, type, focus, film) VALUES($1, $2, $3, $4) RETURNING id",
-				data[i].Name, data[i].Type, data[i].Focus, data[i].Film)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-	}
 }
 
 func respondWithError(w http.ResponseWriter, statusCode int, message string) {
@@ -88,30 +49,6 @@ func respondWithJSON(w http.ResponseWriter, statusCode int, payload interface{})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error while returning response")
 	}
-}
-
-func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	id, err := strconv.Atoi(vars["id"])
-	fmt.Println(id)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid camera ID")
-		return
-	}
-
-	c := camera{ID: id}
-	if err := c.getCamera(a.DB); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			respondWithError(w, http.StatusNotFound, "Not found")
-		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-
-		return
-	}
-	respondWithJSON(w, http.StatusOK, c)
 }
 
 func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
@@ -142,14 +79,33 @@ func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}(r.Body)
 
-	if err := c.createCamera(a.DB); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+	c.createCamera(a.DB)
+
+	respondWithJSON(w, http.StatusCreated, c)
+}
+
+func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid camera ID")
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, c)
+	var c camera
+	if !c.getCamera(a.DB, id) {
+		respondWithError(w, http.StatusNotFound, "Not found")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, c)
 }
 
 func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
@@ -166,15 +122,8 @@ func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer r.Body.Close()
-
 	c.ID = id
-
-	if err := c.updateCamera(a.DB); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
+	c.updateCamera(a.DB)
 	respondWithJSON(w, http.StatusOK, c)
 }
 
@@ -187,9 +136,7 @@ func (a *App) deleteCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := camera{ID: id}
-	if err := c.deleteCamera(a.DB); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-	}
+	c.deleteCamera(a.DB)
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }
 
