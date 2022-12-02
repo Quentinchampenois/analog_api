@@ -72,7 +72,7 @@ func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
-	var c camera
+	var c Camera
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
@@ -99,7 +99,7 @@ func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c camera
+	var c Camera
 	if !c.getCamera(a.DB, id) {
 		respondWithError(w, http.StatusNotFound, "Not found")
 		return
@@ -115,7 +115,7 @@ func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid ID")
 		return
 	}
-	var c camera
+	var c Camera
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -135,7 +135,7 @@ func (a *App) deleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := camera{ID: id}
+	c := Camera{ID: id}
 	c.deleteCamera(a.DB)
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }

@@ -15,7 +15,7 @@ func main() {
 		os.Getenv("DB_NAME"),
 	)
 
-	if err := a.DB.AutoMigrate(&camera{}); err != nil {
+	if err := a.DB.AutoMigrate(&Camera{}); err != nil {
 		log.Fatal(err)
 	}
 

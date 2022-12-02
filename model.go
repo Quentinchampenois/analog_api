@@ -8,7 +8,7 @@ import (
 // camera - Define a camera with specificity
 // TODO - Change Type for relation
 // TODO - Change Focus for relation
-type camera struct {
+type Camera struct {
 	gorm.Model
 
 	ID    int    `json:"ID"`
@@ -18,8 +18,8 @@ type camera struct {
 	Film  int    `json:"film"`
 }
 
-func getCameras(db *gorm.DB, start, count int) ([]camera, error) {
-	var cameras []camera
+func getCameras(db *gorm.DB, start, count int) ([]Camera, error) {
+	var cameras []Camera
 
 	if err := db.Find(&cameras).Error; err != nil {
 		log.Fatalf("Error append in getCameras : \n%v\n", err)
@@ -29,11 +29,11 @@ func getCameras(db *gorm.DB, start, count int) ([]camera, error) {
 	return cameras, nil
 }
 
-func (c *camera) createCamera(db *gorm.DB) {
+func (c *Camera) createCamera(db *gorm.DB) {
 	db.Create(&c)
 }
 
-func (c *camera) getCamera(db *gorm.DB, id int) bool {
+func (c *Camera) getCamera(db *gorm.DB, id int) bool {
 	db.Find(&c, id)
 
 	if c.ID == 0 {
@@ -42,10 +42,10 @@ func (c *camera) getCamera(db *gorm.DB, id int) bool {
 	return true
 }
 
-func (c *camera) updateCamera(db *gorm.DB) {
+func (c *Camera) updateCamera(db *gorm.DB) {
 	db.Save(&c)
 }
 
-func (c *camera) deleteCamera(db *gorm.DB) {
+func (c *Camera) deleteCamera(db *gorm.DB) {
 	db.Delete(&c)
 }
