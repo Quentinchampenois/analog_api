@@ -18,6 +18,9 @@ func main() {
 	if err := a.DB.AutoMigrate(&Camera{}); err != nil {
 		log.Fatal(err)
 	}
+	if err := a.DB.AutoMigrate(&Type{}); err != nil {
+		log.Fatal(err)
+	}
 
 	a.Run(":8080")
 }

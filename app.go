@@ -74,6 +74,7 @@ func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
 func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
 	var c Camera
 	decoder := json.NewDecoder(r.Body)
+
 	if err := decoder.Decode(&c); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -85,7 +86,10 @@ func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
 		}
 	}(r.Body)
 
-	c.createCamera(a.DB)
+	if !c.createCamera(a.DB) {
+		respondWithError(w, http.StatusNotFound, "ID of type not found")
+		return
+	}
 
 	respondWithJSON(w, http.StatusCreated, c)
 }
@@ -123,7 +127,10 @@ func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.ID = id
-	c.updateCamera(a.DB)
+	if err := c.updateCamera(a.DB); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	respondWithJSON(w, http.StatusOK, c)
 }
 
@@ -136,7 +143,100 @@ func (a *App) deleteCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := Camera{ID: id}
-	c.deleteCamera(a.DB)
+	if err := c.deleteCamera(a.DB); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
+}
+
+func (a *App) getTypes(w http.ResponseWriter, r *http.Request) {
+	count, _ := strconv.Atoi(r.FormValue("count"))
+	start, _ := strconv.Atoi(r.FormValue("start"))
+
+	if count > 10 || count < 1 {
+		count = 10
+	}
+
+	if start < 0 {
+		start = 0
+	}
+
+	cameras, err := getTypes(a.DB, start, count)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusOK, cameras)
+}
+
+func (a *App) createType(w http.ResponseWriter, r *http.Request) {
+	var c Type
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&c); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}(r.Body)
+
+	c.createType(a.DB)
+
+	respondWithJSON(w, http.StatusCreated, c)
+}
+
+func (a *App) getType(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid camera ID")
+		return
+	}
+
+	var c Type
+	if !c.getType(a.DB, id) {
+		respondWithError(w, http.StatusNotFound, "Not found")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, c)
+}
+
+func (a *App) updateType(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+	var c Type
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&c); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	c.ID = id
+	c.updateType(a.DB)
+	respondWithJSON(w, http.StatusOK, c)
+}
+
+func (a *App) deleteType(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Type ID")
+		return
+	}
+
+	c := Type{ID: id}
+	c.deleteType(a.DB)
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }
 
@@ -146,4 +246,10 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.getCamera).Methods("GET")
 	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.updateCamera).Methods("PUT")
 	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
+
+	a.Router.HandleFunc("/types", a.getTypes).Methods("GET")
+	a.Router.HandleFunc("/type", a.createType).Methods("POST")
+	a.Router.HandleFunc("/type/{id:[0-9]+}", a.getType).Methods("GET")
+	a.Router.HandleFunc("/type/{id:[0-9]+}", a.updateType).Methods("PUT")
+	a.Router.HandleFunc("/type/{id:[0-9]+}", a.deleteType).Methods("DELETE")
 }
