@@ -1,12 +1,17 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/quentinchampenois/analog_api/models"
 	"log"
 	"os"
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatalf("Some error occured. Err: %s", err)
+	}
+
 	a := App{}
 	a.Initialize(
 		os.Getenv("DB_HOST"),
