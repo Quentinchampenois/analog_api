@@ -294,8 +294,8 @@ func (a *App) getFilm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var f models.Film
-	if !f.GetFilm(a.DB, id) {
-		respondWithError(w, http.StatusNotFound, "Not found")
+	if err = f.GetFilm(a.DB, id); err != nil {
+		respondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -309,7 +309,9 @@ func (a *App) updateFilm(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid ID")
 		return
 	}
+
 	var f models.Film
+
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&f); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -317,11 +319,13 @@ func (a *App) updateFilm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f.ID = id
-	if err := f.UpdateFilm(a.DB); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+	var update models.Film
+	if err = update.GetFilm(a.DB, f.ID); err != nil {
+		respondWithError(w, http.StatusNotFound, "Film does not exist")
 		return
 	}
 
+	f.UpdateFilm(a.DB)
 	respondWithJSON(w, http.StatusOK, f)
 }
 

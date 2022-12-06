@@ -49,22 +49,16 @@ func (f *Film) CreateFilm(db *gorm.DB) bool {
 	return true
 }
 
-func (f *Film) GetFilm(db *gorm.DB, id int) bool {
-	db.Find(&f, id)
-
-	if f.ID == 0 {
-		return false
-	}
-
-	return true
-}
-
-func (f *Film) UpdateFilm(db *gorm.DB) error {
-	if err := db.Save(&f).Error; err != nil {
+func (f *Film) GetFilm(db *gorm.DB, id int) error {
+	if err := db.First(&f, id).Error; err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (f *Film) UpdateFilm(db *gorm.DB) {
+	db.Save(&f)
 }
 
 func (f *Film) DeleteFilm(db *gorm.DB) error {
