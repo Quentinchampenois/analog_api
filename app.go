@@ -34,7 +34,6 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 }
 func (a *App) Run(addr string) {
 	fmt.Println("Listening on http://localhost:8080/")
-	fmt.Println("Cameras list http://localhost:8080/cameras")
 	log.Fatal(http.ListenAndServe(":8080", a.Router))
 }
 
@@ -347,21 +346,30 @@ func (a *App) deleteFilm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) initializeRoutes() {
-	a.Router.HandleFunc("/cameras", a.getCameras).Methods("GET")
-	a.Router.HandleFunc("/camera", a.createCamera).Methods("POST")
-	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.getCamera).Methods("GET")
-	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.updateCamera).Methods("PUT")
-	a.Router.HandleFunc("/camera/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
+	cameraRouter := a.Router.PathPrefix("/camera").Subrouter()
+	cameraRouter.HandleFunc("", a.getCameras).Methods("GET")
+	cameraRouter.HandleFunc("", a.createCamera).Methods("POST")
+	cameraRouter.HandleFunc("/", a.getCameras).Methods("GET")
+	cameraRouter.HandleFunc("/", a.createCamera).Methods("POST")
+	cameraRouter.HandleFunc("/{id:[0-9]+}", a.getCamera).Methods("GET")
+	cameraRouter.HandleFunc("/{id:[0-9]+}", a.updateCamera).Methods("PUT")
+	cameraRouter.HandleFunc("/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
 
-	a.Router.HandleFunc("/types", a.getTypes).Methods("GET")
-	a.Router.HandleFunc("/type", a.createType).Methods("POST")
-	a.Router.HandleFunc("/type/{id:[0-9]+}", a.getType).Methods("GET")
-	a.Router.HandleFunc("/type/{id:[0-9]+}", a.updateType).Methods("PUT")
-	a.Router.HandleFunc("/type/{id:[0-9]+}", a.deleteType).Methods("DELETE")
+	typeRouter := a.Router.PathPrefix("/type").Subrouter()
+	typeRouter.HandleFunc("", a.getTypes).Methods("GET")
+	typeRouter.HandleFunc("", a.createType).Methods("POST")
+	typeRouter.HandleFunc("/", a.getTypes).Methods("GET")
+	typeRouter.HandleFunc("/", a.createType).Methods("POST")
+	typeRouter.HandleFunc("/{id:[0-9]+}", a.getType).Methods("GET")
+	typeRouter.HandleFunc("/{id:[0-9]+}", a.updateType).Methods("PUT")
+	typeRouter.HandleFunc("/{id:[0-9]+}", a.deleteType).Methods("DELETE")
 
-	a.Router.HandleFunc("/films", a.getFilms).Methods("GET")
-	a.Router.HandleFunc("/film", a.createFilm).Methods("POST")
-	a.Router.HandleFunc("/film/{id:[0-9]+}", a.getFilm).Methods("GET")
-	a.Router.HandleFunc("/film/{id:[0-9]+}", a.updateFilm).Methods("PUT")
-	a.Router.HandleFunc("/film/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
+	filmRouter := a.Router.PathPrefix("/film").Subrouter()
+	filmRouter.HandleFunc("", a.getFilms).Methods("GET")
+	filmRouter.HandleFunc("", a.createFilm).Methods("POST")
+	filmRouter.HandleFunc("/", a.getFilms).Methods("GET")
+	filmRouter.HandleFunc("/", a.createFilm).Methods("POST")
+	filmRouter.HandleFunc("/{id:[0-9]+}", a.getFilm).Methods("GET")
+	filmRouter.HandleFunc("/{id:[0-9]+}", a.updateFilm).Methods("PUT")
+	filmRouter.HandleFunc("/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
 }
