@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/quentinchampenois/analog_api/models"
 	"log"
 	"os"
 )
@@ -19,6 +20,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if err := a.DB.AutoMigrate(&Type{}); err != nil {
+		log.Fatal(err)
+	}
+	if err := a.DB.AutoMigrate(&models.Film{}); err != nil {
 		log.Fatal(err)
 	}
 
