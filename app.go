@@ -3,20 +3,44 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/quentinchampenois/analog_api/models"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type App struct {
-	Router *mux.Router
-	DB     *gorm.DB
+	Router    *mux.Router
+	DB        *gorm.DB
+	JWTSecret []byte
+}
+
+type User struct {
+	gorm.Model
+	Name     string `json:"name"`
+	Email    string `gorm:"unique" json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+}
+
+type Authentication struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type Token struct {
+	Role        string `json:"role"`
+	Email       string `json:"email"`
+	TokenString string `json:"token"`
 }
 
 func (a *App) Initialize(host, port, user, password, dbname string) {
@@ -31,10 +55,11 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
+	a.JWTSecret = []byte("SecretYouShouldHide")
 }
 func (a *App) Run(addr string) {
 	fmt.Println("Listening on http://localhost:8080/")
-	log.Fatal(http.ListenAndServe(":8080", a.Router))
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Access-Control-Allow-Origin", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(a.Router)))
 }
 
 func respondWithError(w http.ResponseWriter, statusCode int, message string) {
@@ -345,6 +370,113 @@ func (a *App) deleteFilm(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }
 
+func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
+	var user User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var dbuser User
+	a.DB.Where("email = ?", user.Email).First(&dbuser)
+
+	//checks if email is already register or not
+	if dbuser.Email != "" {
+		respondWithError(w, http.StatusNotFound, "Email not found")
+		return
+	}
+
+	user.Password, err = encryptedPassword(user.Password)
+	if err != nil {
+		log.Fatalln("error in password hash")
+	}
+
+	a.DB.Create(&user)
+	respondWithJSON(w, http.StatusOK, user)
+}
+
+func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
+	var authdetails Authentication
+	err := json.NewDecoder(r.Body).Decode(&authdetails)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var authuser User
+	a.DB.Where("email = ?", authdetails.Email).First(&authuser)
+	if authuser.Email == "" {
+		respondWithError(w, http.StatusNotFound, "Email not found")
+		return
+	}
+
+	check := checkPasswordHash(authdetails.Password, authuser.Password)
+
+	if !check {
+		respondWithError(w, http.StatusNotFound, "User email or password is invalid")
+		return
+	}
+
+	validToken, err := a.generateJWT(authuser.Email, authuser.Role)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Failed to generate token")
+		return
+	}
+
+	var token Token
+	token.Email = authuser.Email
+	token.Role = authuser.Role
+	token.TokenString = validToken
+	respondWithJSON(w, http.StatusOK, token)
+}
+
+func (a *App) isAuthorized(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Header["Token"] == nil {
+			respondWithError(w, http.StatusUnauthorized, "No Token Found")
+			return
+		}
+
+		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("there was an error in parsing")
+			}
+			return a.JWTSecret, nil
+		})
+
+		if err != nil {
+			respondWithError(w, http.StatusUnauthorized, "Your Token has been expired")
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if claims["role"] == "admin" {
+				r.Header.Set("Role", "admin")
+				handler.ServeHTTP(w, r)
+				return
+
+			} else if claims["role"] == "user" {
+				r.Header.Set("Role", "user")
+				handler.ServeHTTP(w, r)
+				return
+			}
+		}
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+	}
+}
+
+func encryptedPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 func (a *App) initializeRoutes() {
 	cameraRouter := a.Router.PathPrefix("/camera").Subrouter()
 	cameraRouter.HandleFunc("", a.getCameras).Methods("GET")
@@ -372,4 +504,49 @@ func (a *App) initializeRoutes() {
 	filmRouter.HandleFunc("/{id:[0-9]+}", a.getFilm).Methods("GET")
 	filmRouter.HandleFunc("/{id:[0-9]+}", a.updateFilm).Methods("PUT")
 	filmRouter.HandleFunc("/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
+
+	a.Router.HandleFunc("/signup", a.signUp).Methods("POST")
+	a.Router.HandleFunc("/signin", a.signIn).Methods("POST")
+
+	a.Router.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Access-Control-Request-Headers, Access-Control-Request-Method, Connection, Host, Origin, User-Agent, Referer, Cache-Control, X-header")
+	})
+}
+
+func (a *App) generateJWT(email, role string) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["authorized"] = true
+	claims["email"] = email
+	claims["role"] = role
+	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
+	tokenString, err := token.SignedString(a.JWTSecret)
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (app *App) JWTMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("X-Session-Token")
+		var tokenUsers map[string]string
+		tokenUsers["00000000"] = "user0"
+		tokenUsers["aaaaaaaa"] = "userA"
+		tokenUsers["05f717e5"] = "randomUser"
+		tokenUsers["deadbeef"] = "user0"
+
+		if user, found := tokenUsers[token]; found {
+			// We found the token in our map
+			log.Printf("Authenticated user %s\n", user)
+			next.ServeHTTP(w, r)
+		} else {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+		}
+	})
 }

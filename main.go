@@ -24,10 +24,24 @@ func main() {
 	if err := a.DB.AutoMigrate(&Camera{}); err != nil {
 		log.Fatal(err)
 	}
+
 	if err := a.DB.AutoMigrate(&Type{}); err != nil {
 		log.Fatal(err)
 	}
+
 	if err := a.DB.AutoMigrate(&models.Film{}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := a.DB.AutoMigrate(&User{}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := a.DB.AutoMigrate(&Authentication{}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := a.DB.AutoMigrate(&Token{}); err != nil {
 		log.Fatal(err)
 	}
 
