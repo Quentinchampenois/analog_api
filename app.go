@@ -26,20 +26,19 @@ type App struct {
 
 type User struct {
 	gorm.Model
-	Name     string `json:"name"`
-	Email    string `gorm:"unique" json:"email"`
+	Pseudo   string `gorm:"unique;not null" json:"pseudo"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
 
 type Authentication struct {
-	Email    string `json:"email"`
+	Pseudo   string `json:"pseudo"`
 	Password string `json:"password"`
 }
 
 type Token struct {
 	Role        string `json:"role"`
-	Email       string `json:"email"`
+	Pseudo      string `json:"pseudo"`
 	TokenString string `json:"token"`
 }
 
@@ -378,12 +377,18 @@ func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println(user.Pseudo)
+	if user.Pseudo == "" || user.Password == "" {
+		respondWithError(w, http.StatusBadRequest, "Missing pseudo or password")
+		return
+	}
+
 	var dbuser User
-	a.DB.Where("email = ?", user.Email).First(&dbuser)
+	a.DB.Where("email = ?", user.Pseudo).First(&dbuser)
 
 	//checks if email is already register or not
-	if dbuser.Email != "" {
-		respondWithError(w, http.StatusNotFound, "Email not found")
+	if dbuser.Pseudo != "" {
+		respondWithError(w, http.StatusNotFound, "Pseudo not found")
 		return
 	}
 
@@ -405,34 +410,34 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var authuser User
-	a.DB.Where("email = ?", authdetails.Email).First(&authuser)
-	if authuser.Email == "" {
-		respondWithError(w, http.StatusNotFound, "Email not found")
+	a.DB.Where("pseudo = ?", authdetails.Pseudo).First(&authuser)
+	if authuser.Pseudo == "" {
+		respondWithError(w, http.StatusNotFound, "User not found")
 		return
 	}
 
 	check := checkPasswordHash(authdetails.Password, authuser.Password)
 
 	if !check {
-		respondWithError(w, http.StatusNotFound, "User email or password is invalid")
+		respondWithError(w, http.StatusNotFound, "User pseudo or password is invalid")
 		return
 	}
 
-	validToken, err := a.generateJWT(authuser.Email, authuser.Role)
+	validToken, err := a.generateJWT(authuser.Pseudo, authuser.Role)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "Failed to generate token")
 		return
 	}
 
 	var token Token
-	token.Email = authuser.Email
+	token.Pseudo = authuser.Pseudo
 	token.Role = authuser.Role
 	token.TokenString = validToken
 	respondWithJSON(w, http.StatusOK, token)
 }
 
-func (a *App) isAuthorized(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a *App) isAuthorized(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Header["Token"] == nil {
 			respondWithError(w, http.StatusUnauthorized, "No Token Found")
@@ -464,7 +469,7 @@ func (a *App) isAuthorized(handler http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-	}
+	})
 }
 
 func encryptedPassword(password string) (string, error) {
@@ -484,8 +489,8 @@ func (a *App) initializeRoutes() {
 	cameraRouter.HandleFunc("/", a.getCameras).Methods("GET")
 	cameraRouter.HandleFunc("/", a.createCamera).Methods("POST")
 	cameraRouter.HandleFunc("/{id:[0-9]+}", a.getCamera).Methods("GET")
-	cameraRouter.HandleFunc("/{id:[0-9]+}", a.updateCamera).Methods("PUT")
-	cameraRouter.HandleFunc("/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
+	// cameraRouter.HandleFunc("/{id:[0-9]+}", a.updateCamera).Methods("PUT")
+	// cameraRouter.HandleFunc("/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
 
 	typeRouter := a.Router.PathPrefix("/type").Subrouter()
 	typeRouter.HandleFunc("", a.getTypes).Methods("GET")
@@ -493,8 +498,8 @@ func (a *App) initializeRoutes() {
 	typeRouter.HandleFunc("/", a.getTypes).Methods("GET")
 	typeRouter.HandleFunc("/", a.createType).Methods("POST")
 	typeRouter.HandleFunc("/{id:[0-9]+}", a.getType).Methods("GET")
-	typeRouter.HandleFunc("/{id:[0-9]+}", a.updateType).Methods("PUT")
-	typeRouter.HandleFunc("/{id:[0-9]+}", a.deleteType).Methods("DELETE")
+	// typeRouter.HandleFunc("/{id:[0-9]+}", a.updateType).Methods("PUT")
+	// typeRouter.HandleFunc("/{id:[0-9]+}", a.deleteType).Methods("DELETE")
 
 	filmRouter := a.Router.PathPrefix("/film").Subrouter()
 	filmRouter.HandleFunc("", a.getFilms).Methods("GET")
@@ -502,8 +507,8 @@ func (a *App) initializeRoutes() {
 	filmRouter.HandleFunc("/", a.getFilms).Methods("GET")
 	filmRouter.HandleFunc("/", a.createFilm).Methods("POST")
 	filmRouter.HandleFunc("/{id:[0-9]+}", a.getFilm).Methods("GET")
-	filmRouter.HandleFunc("/{id:[0-9]+}", a.updateFilm).Methods("PUT")
-	filmRouter.HandleFunc("/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
+	// filmRouter.HandleFunc("/{id:[0-9]+}", a.updateFilm).Methods("PUT")
+	// filmRouter.HandleFunc("/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
 
 	a.Router.HandleFunc("/signup", a.signUp).Methods("POST")
 	a.Router.HandleFunc("/signin", a.signIn).Methods("POST")
@@ -513,6 +518,19 @@ func (a *App) initializeRoutes() {
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Access-Control-Request-Headers, Access-Control-Request-Method, Connection, Host, Origin, User-Agent, Referer, Cache-Control, X-header")
 	})
+
+	putProtectedRouter := a.Router.Methods(http.MethodPut).Subrouter()
+	putProtectedRouter.HandleFunc("/camera/{id:[0-9]+}", a.updateCamera).Methods("PUT")
+	putProtectedRouter.HandleFunc("/type/{id:[0-9]+}", a.updateType).Methods("PUT")
+	putProtectedRouter.HandleFunc("/film/{id:[0-9]+}", a.updateFilm).Methods("PUT")
+
+	deleteProtectedRouter := a.Router.Methods(http.MethodDelete).Subrouter()
+	deleteProtectedRouter.HandleFunc("/camera/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
+	deleteProtectedRouter.HandleFunc("/type/{id:[0-9]+}", a.deleteType).Methods("DELETE")
+	deleteProtectedRouter.HandleFunc("/film/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
+
+	putProtectedRouter.Use(a.isAuthorized)
+	deleteProtectedRouter.Use(a.isAuthorized)
 }
 
 func (a *App) generateJWT(email, role string) (string, error) {
@@ -530,23 +548,4 @@ func (a *App) generateJWT(email, role string) (string, error) {
 	}
 
 	return tokenString, nil
-}
-
-func (app *App) JWTMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("X-Session-Token")
-		var tokenUsers map[string]string
-		tokenUsers["00000000"] = "user0"
-		tokenUsers["aaaaaaaa"] = "userA"
-		tokenUsers["05f717e5"] = "randomUser"
-		tokenUsers["deadbeef"] = "user0"
-
-		if user, found := tokenUsers[token]; found {
-			// We found the token in our map
-			log.Printf("Authenticated user %s\n", user)
-			next.ServeHTTP(w, r)
-		} else {
-			http.Error(w, "Forbidden", http.StatusForbidden)
-		}
-	})
 }
