@@ -37,10 +37,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := a.DB.AutoMigrate(&Authentication{}); err != nil {
-		log.Fatal(err)
-	}
-
 	if err := a.DB.AutoMigrate(&Token{}); err != nil {
 		log.Fatal(err)
 	}

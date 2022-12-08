@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -54,7 +55,11 @@ func (a *App) Initialize(host, port, user, password, dbname string) {
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
-	a.JWTSecret = []byte("SecretYouShouldHide")
+
+	if os.Getenv("JWT_SECRET_PASSWORD") == "" {
+		log.Fatalln("You must define 'JWT_SECRET_PASSWORD' environment variable for JWT authentication system")
+	}
+	a.JWTSecret = []byte(os.Getenv("JWT_SECRET_PASSWORD"))
 }
 func (a *App) Run(addr string) {
 	fmt.Println("Listening on http://localhost:8080/")
