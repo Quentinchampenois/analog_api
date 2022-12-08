@@ -489,8 +489,6 @@ func (a *App) initializeRoutes() {
 	cameraRouter.HandleFunc("/", a.getCameras).Methods("GET")
 	cameraRouter.HandleFunc("/", a.createCamera).Methods("POST")
 	cameraRouter.HandleFunc("/{id:[0-9]+}", a.getCamera).Methods("GET")
-	// cameraRouter.HandleFunc("/{id:[0-9]+}", a.updateCamera).Methods("PUT")
-	// cameraRouter.HandleFunc("/{id:[0-9]+}", a.deleteCamera).Methods("DELETE")
 
 	typeRouter := a.Router.PathPrefix("/type").Subrouter()
 	typeRouter.HandleFunc("", a.getTypes).Methods("GET")
@@ -498,8 +496,6 @@ func (a *App) initializeRoutes() {
 	typeRouter.HandleFunc("/", a.getTypes).Methods("GET")
 	typeRouter.HandleFunc("/", a.createType).Methods("POST")
 	typeRouter.HandleFunc("/{id:[0-9]+}", a.getType).Methods("GET")
-	// typeRouter.HandleFunc("/{id:[0-9]+}", a.updateType).Methods("PUT")
-	// typeRouter.HandleFunc("/{id:[0-9]+}", a.deleteType).Methods("DELETE")
 
 	filmRouter := a.Router.PathPrefix("/film").Subrouter()
 	filmRouter.HandleFunc("", a.getFilms).Methods("GET")
@@ -507,8 +503,6 @@ func (a *App) initializeRoutes() {
 	filmRouter.HandleFunc("/", a.getFilms).Methods("GET")
 	filmRouter.HandleFunc("/", a.createFilm).Methods("POST")
 	filmRouter.HandleFunc("/{id:[0-9]+}", a.getFilm).Methods("GET")
-	// filmRouter.HandleFunc("/{id:[0-9]+}", a.updateFilm).Methods("PUT")
-	// filmRouter.HandleFunc("/{id:[0-9]+}", a.deleteFilm).Methods("DELETE")
 
 	a.Router.HandleFunc("/signup", a.signUp).Methods("POST")
 	a.Router.HandleFunc("/signin", a.signIn).Methods("POST")
@@ -540,7 +534,7 @@ func (a *App) generateJWT(email, role string) (string, error) {
 	claims["authorized"] = true
 	claims["email"] = email
 	claims["role"] = role
-	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 	tokenString, err := token.SignedString(a.JWTSecret)
 
 	if err != nil {
