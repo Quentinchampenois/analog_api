@@ -381,10 +381,7 @@ func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbuser models.User
-	if err := a.DB.Where("pseudo = ?", user.Pseudo).First(&dbuser).Error; err != nil {
-		respondWithError(w, http.StatusFound, err.Error())
-		return
-	}
+	a.DB.Where("pseudo = ?", user.Pseudo).First(&dbuser)
 
 	user.Password, err = encryptedPassword(user.Password)
 	if err != nil {
