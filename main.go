@@ -33,11 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := a.DB.AutoMigrate(&User{}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := a.DB.AutoMigrate(&Token{}); err != nil {
+	if err := a.DB.AutoMigrate(&models.User{}); err != nil {
 		log.Fatal(err)
 	}
 

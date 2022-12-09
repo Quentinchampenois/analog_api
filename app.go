@@ -25,13 +25,6 @@ type App struct {
 	JWTSecret []byte
 }
 
-type User struct {
-	gorm.Model
-	Pseudo   string `gorm:"unique;not null" json:"pseudo"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-}
-
 type Authentication struct {
 	Pseudo   string `json:"pseudo"`
 	Password string `json:"password"`
@@ -375,25 +368,21 @@ func (a *App) deleteFilm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
-	var user User
+	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	fmt.Println(user.Pseudo)
 	if user.Pseudo == "" || user.Password == "" {
 		respondWithError(w, http.StatusBadRequest, "Missing pseudo or password")
 		return
 	}
 
-	var dbuser User
-	a.DB.Where("email = ?", user.Pseudo).First(&dbuser)
-
-	//checks if email is already register or not
-	if dbuser.Pseudo != "" {
-		respondWithError(w, http.StatusNotFound, "Pseudo not found")
+	var dbuser models.User
+	if err := a.DB.Where("pseudo = ?", user.Pseudo).First(&dbuser).Error; err != nil {
+		respondWithError(w, http.StatusFound, err.Error())
 		return
 	}
 
@@ -414,7 +403,7 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var authuser User
+	var authuser models.User
 	a.DB.Where("pseudo = ?", authdetails.Pseudo).First(&authuser)
 	if authuser.Pseudo == "" {
 		respondWithError(w, http.StatusNotFound, "User not found")
