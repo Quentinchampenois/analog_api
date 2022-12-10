@@ -85,7 +85,7 @@ func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
 		start = 0
 	}
 
-	cameras, err := getCameras(a.DB, start, count)
+	cameras, err := models.GetCameras(a.DB, start, count)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -94,7 +94,7 @@ func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
-	var c Camera
+	var c models.Camera
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&c); err != nil {
@@ -108,7 +108,7 @@ func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
 		}
 	}(r.Body)
 
-	if !c.createCamera(a.DB) {
+	if !c.CreateCamera(a.DB) {
 		respondWithError(w, http.StatusNotFound, "ID of type not found")
 		return
 	}
@@ -125,8 +125,8 @@ func (a *App) getCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c Camera
-	if !c.getCamera(a.DB, id) {
+	var c models.Camera
+	if !c.GetCamera(a.DB, id) {
 		respondWithError(w, http.StatusNotFound, "Not found")
 		return
 	}
@@ -141,7 +141,7 @@ func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid ID")
 		return
 	}
-	var c Camera
+	var c models.Camera
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -149,7 +149,7 @@ func (a *App) updateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.ID = id
-	if err := c.updateCamera(a.DB); err != nil {
+	if err := c.UpdateCamera(a.DB); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -164,8 +164,8 @@ func (a *App) deleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := Camera{ID: id}
-	if err := c.deleteCamera(a.DB); err != nil {
+	c := models.Camera{ID: id}
+	if err := c.DeleteCamera(a.DB); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -185,7 +185,7 @@ func (a *App) getTypes(w http.ResponseWriter, r *http.Request) {
 		start = 0
 	}
 
-	cameras, err := getTypes(a.DB, start, count)
+	cameras, err := models.GetTypes(a.DB, start, count)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -194,9 +194,9 @@ func (a *App) getTypes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createType(w http.ResponseWriter, r *http.Request) {
-	var c Type
+	var t models.Type
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&c); err != nil {
+	if err := decoder.Decode(&t); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -207,9 +207,9 @@ func (a *App) createType(w http.ResponseWriter, r *http.Request) {
 		}
 	}(r.Body)
 
-	c.createType(a.DB)
+	t.CreateType(a.DB)
 
-	respondWithJSON(w, http.StatusCreated, c)
+	respondWithJSON(w, http.StatusCreated, t)
 }
 
 func (a *App) getType(w http.ResponseWriter, r *http.Request) {
@@ -221,8 +221,8 @@ func (a *App) getType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c Type
-	if !c.getType(a.DB, id) {
+	var c models.Type
+	if !c.GetType(a.DB, id) {
 		respondWithError(w, http.StatusNotFound, "Not found")
 		return
 	}
@@ -237,7 +237,7 @@ func (a *App) updateType(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid ID")
 		return
 	}
-	var c Type
+	var c models.Type
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -245,7 +245,7 @@ func (a *App) updateType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.ID = id
-	c.updateType(a.DB)
+	c.UpdateType(a.DB)
 	respondWithJSON(w, http.StatusOK, c)
 }
 
@@ -257,8 +257,8 @@ func (a *App) deleteType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := Type{ID: id}
-	c.deleteType(a.DB)
+	c := models.Type{ID: id}
+	c.DeleteType(a.DB)
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }
 
