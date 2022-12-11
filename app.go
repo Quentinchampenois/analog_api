@@ -367,6 +367,55 @@ func (a *App) deleteFilm(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "Deleted successfully"})
 }
 
+func (a *App) getUserCameras(w http.ResponseWriter, r *http.Request) {
+	count, _ := strconv.Atoi(r.FormValue("count"))
+	start, _ := strconv.Atoi(r.FormValue("start"))
+
+	if count > 10 || count < 1 {
+		count = 10
+	}
+
+	if start < 0 {
+		start = 0
+	}
+
+	token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("there was an error in parsing")
+		}
+		return a.JWTSecret, nil
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Your Token has been expired")
+		return
+	}
+
+	var userToken struct {
+		id     float64
+		pseudo string
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if claims["user_id"] == nil || claims["user_id"] == "" {
+			respondWithError(w, http.StatusUnauthorized, "Token doesn't contain required claims")
+			return
+		}
+		if claims["pseudo"] == nil || claims["pseudo"] == "" {
+			respondWithError(w, http.StatusUnauthorized, "Token doesn't contain required claims")
+			return
+		}
+
+		userToken.id = claims["user_id"].(float64)
+		userToken.pseudo = claims["pseudo"].(string)
+	}
+
+	var user models.User
+	a.DB.Where("pseudo = ?", userToken.pseudo).Where("id = ?", userToken.id).First(&user)
+	a.DB.Preload("Cameras").Find(&user)
+	respondWithJSON(w, http.StatusOK, user.Cameras)
+}
+
 func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -414,7 +463,7 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validToken, err := a.generateJWT(authuser.Pseudo, authuser.Role)
+	validToken, err := a.generateJWT(authuser.ID, authuser.Pseudo, authuser.Role)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "Failed to generate token")
 		return
@@ -516,14 +565,19 @@ func (a *App) initializeRoutes() {
 
 	putProtectedRouter.Use(a.isAuthorized)
 	deleteProtectedRouter.Use(a.isAuthorized)
+
+	userRouter := a.Router.PathPrefix("/user").Subrouter()
+	userRouter.HandleFunc("/cameras", a.getUserCameras).Methods("GET")
+	userRouter.Use(a.isAuthorized)
 }
 
-func (a *App) generateJWT(email, role string) (string, error) {
+func (a *App) generateJWT(userID uint, pseudo, role string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["authorized"] = true
-	claims["email"] = email
+	claims["user_id"] = userID
+	claims["pseudo"] = pseudo
 	claims["role"] = role
 	claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 	tokenString, err := token.SignedString(a.JWTSecret)
