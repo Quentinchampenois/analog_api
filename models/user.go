@@ -10,6 +10,6 @@ type User struct {
 	Cameras  []Camera `gorm:"many2many:user_cameras;"`
 }
 
-func (u *User) registerCamera(db *gorm.DB, c *Camera) error {
+func (u *User) RegisterCamera(db *gorm.DB, c *Camera) error {
 	return db.Model(&u).Association("Cameras").Append(c)
 }
