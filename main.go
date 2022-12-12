@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"github.com/quentinchampenois/analog_api/configs"
 	"log"
-	"os"
 )
 
 func main() {
@@ -11,16 +11,13 @@ func main() {
 		log.Fatalf("Some error occured. Err: %s", err)
 	}
 
-	a := App{}
-	a.Initialize(
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USERNAME"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-	)
-
+	a := App{
+		Configs: configs.Config{
+			Server:   configs.Server{},
+			Database: configs.Database{},
+		},
+	}
+	a.Initialize()
 	a.migrate()
-
-	a.Run(":8080")
+	a.Run()
 }

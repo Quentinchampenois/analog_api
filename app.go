@@ -3,18 +3,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/quentinchampenois/analog_api/configs"
 	"github.com/quentinchampenois/analog_api/models"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 )
@@ -22,6 +21,7 @@ import (
 type App struct {
 	Router    *mux.Router
 	DB        *gorm.DB
+	Configs   configs.Config
 	JWTSecret []byte
 }
 
@@ -36,27 +36,16 @@ type Token struct {
 	TokenString string `json:"token"`
 }
 
-func (a *App) Initialize(host, port, user, password, dbname string) {
-	dsn :=
-		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=Europe/paris", host, port, user, password, dbname)
-
-	var err error
-	a.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
+func (a *App) Initialize() {
+	a.Configs.Load()
+	a.DB = a.Configs.Database.Connection()
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
-
-	if os.Getenv("JWT_SECRET_PASSWORD") == "" {
-		log.Fatalln("You must define 'JWT_SECRET_PASSWORD' environment variable for JWT authentication system")
-	}
-	a.JWTSecret = []byte(os.Getenv("JWT_SECRET_PASSWORD"))
 }
-func (a *App) Run(addr string) {
-	fmt.Println("Listening on http://localhost:8080/")
-	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Access-Control-Allow-Origin", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(a.Router)))
+func (a *App) Run() {
+	fmt.Printf("Listening on %v\n", a.Configs.Server.GetFullPath())
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", a.Configs.Server.Port), handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Access-Control-Allow-Origin", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(a.Router)))
 }
 
 func respondWithError(w http.ResponseWriter, statusCode int, message string) {
