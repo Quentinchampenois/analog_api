@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/joho/godotenv"
-	"github.com/quentinchampenois/analog_api/models"
 	"log"
 	"os"
 )
@@ -21,21 +20,7 @@ func main() {
 		os.Getenv("DB_NAME"),
 	)
 
-	if err := a.DB.AutoMigrate(&models.Camera{}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := a.DB.AutoMigrate(&models.Type{}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := a.DB.AutoMigrate(&models.Film{}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := a.DB.AutoMigrate(&models.User{}); err != nil {
-		log.Fatal(err)
-	}
+	a.migrate()
 
 	a.Run(":8080")
 }
