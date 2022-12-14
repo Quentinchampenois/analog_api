@@ -49,5 +49,6 @@ func (a *App) initializeRoutes() {
 	userRouter := a.Router.PathPrefix("/user").Subrouter()
 	userRouter.HandleFunc("/cameras", a.getUserCameras).Methods("GET")
 	userRouter.HandleFunc("/cameras/{id:[0-9]+}", a.registerUserCamera).Methods("POST")
+	userRouter.HandleFunc("/cameras/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
 	userRouter.Use(a.isAuthorized)
 }
