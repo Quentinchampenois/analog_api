@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/gorilla/mux"
 	"github.com/quentinchampenois/analog_api/models"
 	"net/http"
 	"strconv"
@@ -54,10 +53,16 @@ func (a *App) getUserCameras(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User
 	a.DB.Where("pseudo = ?", userToken.pseudo).Where("id = ?", userToken.id).First(&user)
+
+	var userCameraFilms []models.UserCameraFilm
+	a.DB.Where("user_id = ?", user.ID).Preload("Camera").Find(&userCameraFilms)
+
 	a.DB.Preload("Cameras").Find(&user)
-	respondWithJSON(w, http.StatusOK, user.Cameras)
+	respondWithJSON(w, http.StatusOK, userCameraFilms)
 }
 
+/*
+TODO: Allow to delete / create UserCameraFilm
 func (a *App) registerUserCamera(w http.ResponseWriter, r *http.Request) {
 	token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -171,3 +176,4 @@ func (a *App) deleteUserCamera(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, "Successfully deleted !")
 }
+*/

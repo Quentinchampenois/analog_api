@@ -6,11 +6,11 @@ import (
 )
 
 func (a *App) migrate() {
-	if err := a.DB.AutoMigrate(&models.Camera{}); err != nil {
+	if err := a.DB.AutoMigrate(&models.Type{}); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := a.DB.AutoMigrate(&models.Type{}); err != nil {
+	if err := a.DB.AutoMigrate(&models.Camera{}); err != nil {
 		log.Fatal(err)
 	}
 
