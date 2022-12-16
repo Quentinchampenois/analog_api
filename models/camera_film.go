@@ -12,7 +12,7 @@ type CameraFilm struct {
 	CameraID  int       `json:"-"`
 	Camera    Camera    `json:"camera"`
 	FilmID    int       `json:"-"`
-	Film      Film      `json:"film_id"`
+	Film      Film      `json:"film"`
 	StartDate time.Time `gorm:"not null" json:"start_date"`
 	EndDate   time.Time `json:"end_date"`
 }
