@@ -22,7 +22,7 @@ func (a *App) migrate() {
 		log.Fatal(err)
 	}
 
-	if err := a.DB.AutoMigrate(&models.CameraFilm{}); err != nil {
+	if err := a.DB.AutoMigrate(&models.UserCameraFilm{}); err != nil {
 		log.Fatal(err)
 	}
 }

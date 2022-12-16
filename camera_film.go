@@ -62,9 +62,9 @@ func (a *App) getUserCameraFilms(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	a.DB.Where("pseudo = ?", userToken.pseudo).Where("id = ?", userToken.id).First(&user)
 	fmt.Println(a.DB.Table("camera_films").Where("user_id = ?", user.ID).Where("camera_id = ?", id))
-	var cameraFilms []models.CameraFilm
-	a.DB.Where("user_id = ?", user.ID).Preload("User").Preload("Film").Preload("Camera").Find(&cameraFilms)
-	respondWithJSON(w, http.StatusOK, cameraFilms)
+	var userCameraFilms []models.UserCameraFilm
+	a.DB.Where("user_id = ?", user.ID).Preload("User").Preload("Film").Preload("Camera").Find(&userCameraFilms)
+	respondWithJSON(w, http.StatusOK, userCameraFilms)
 }
 
 /*

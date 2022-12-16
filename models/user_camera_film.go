@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type CameraFilm struct {
+type UserCameraFilm struct {
 	gorm.Model
-	UserID    int       `json:"-"`
-	User      User      `json:"user"`
+	UserID    int       `json:"user_id"`
+	User      User      `json:"-"`
 	CameraID  int       `json:"-"`
 	Camera    Camera    `json:"camera"`
 	FilmID    int       `json:"-"`
