@@ -51,4 +51,10 @@ func (a *App) initializeRoutes() {
 	userRouter.HandleFunc("/cameras/{id:[0-9]+}", a.registerUserCamera).Methods("POST")
 	userRouter.HandleFunc("/cameras/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
 	userRouter.Use(a.isAuthorized)
+
+	cameraFilmRouter := userRouter.PathPrefix("/cameras").Subrouter()
+	cameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("GET")
+	cameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("POST")
+	cameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
+	cameraFilmRouter.Use(a.isAuthorized)
 }

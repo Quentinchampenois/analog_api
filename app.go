@@ -73,9 +73,6 @@ func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dbuser models.User
-	a.DB.Where("pseudo = ?", user.Pseudo).First(&dbuser)
-
 	user.Password, err = encryptedPassword(user.Password)
 	if err != nil {
 		log.Fatalln("error in password hash")
