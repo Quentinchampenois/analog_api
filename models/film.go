@@ -12,6 +12,7 @@ type Film struct {
 	ID    int    `json:"ID"`
 	Name  string `json:"name"`
 	Size  int    `json:"size"`
+	Iso   int    `json:"iso"`
 	Color bool   `json:"color"`
 	Brand string `json:"brand"`
 }
@@ -32,6 +33,7 @@ func (f *Film) CreateFilm(db *gorm.DB) bool {
 		ID:    f.ID,
 		Name:  f.Name,
 		Size:  f.Size,
+		Iso:   f.Iso,
 		Color: f.Color,
 		Brand: f.Brand,
 	}

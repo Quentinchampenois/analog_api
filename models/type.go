@@ -13,14 +13,14 @@ type Type struct {
 }
 
 func GetTypes(db *gorm.DB, start, count int) ([]Type, error) {
-	var cameras []Type
+	var types []Type
 
-	if err := db.Find(&cameras).Error; err != nil {
+	if err := db.Find(&types).Error; err != nil {
 		log.Fatalf("Error append in getTypes : \n%v\n", err)
 		return nil, nil
 	}
 
-	return cameras, nil
+	return types, nil
 }
 
 func (t *Type) CreateType(db *gorm.DB) {

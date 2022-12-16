@@ -10,10 +10,9 @@ type Camera struct {
 
 	ID     int    `json:"ID"`
 	Name   string `json:"name"`
-	TypeID int    `json:"typeID"`
+	TypeID int    `json:"-"`
 	Type   Type   `json:"type"`
 	Focus  string `json:"focus"`
-	Film   int    `json:"film"`
 }
 
 func GetCameras(db *gorm.DB, start, count int) ([]Camera, error) {
@@ -42,7 +41,6 @@ func (c *Camera) CreateCamera(db *gorm.DB) bool {
 			ID:   t.ID,
 			Name: t.Name,
 		},
-		Film: c.Film,
 	}
 	db.Create(camera)
 	db.Save(camera)
