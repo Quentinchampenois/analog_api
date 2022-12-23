@@ -73,7 +73,7 @@ func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Password, err = encryptedPassword(user.Password)
+	user.Password, err = a.EncryptedPassword(user.Password)
 	if err != nil {
 		log.Fatalln("error in password hash")
 	}
@@ -171,7 +171,7 @@ func (a *App) generateJWT(userID uint, pseudo, role string) (string, error) {
 	return tokenString, nil
 }
 
-func encryptedPassword(password string) (string, error) {
+func (a *App) EncryptedPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
