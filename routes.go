@@ -56,6 +56,8 @@ func (a *App) initializeRoutes() {
 
 	userCameraFilmRouter := a.Router.PathPrefix("/camera").Subrouter()
 	userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("GET")
+	userCameraFilmRouter.HandleFunc("/films", a.createUserCameraFilms).Methods("POST")
+	userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.rewindFilm).Methods("PUT")
 	/*
 
 		userCameraFilmRouter := userRouter.PathPrefix("/camerad").Subrouter()

@@ -143,18 +143,17 @@ func (a *App) seed() {
 	userCameraFilms := []models.UserCameraFilm{{
 		UserCameraID: 1,
 		FilmID:       1,
-		StartDate:    time.Date(2021, time.October, 10, 12, 0, 0, 0, time.UTC).Unix(),
-		EndDate:      time.Date(2021, time.November, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		StartDate:    time.Date(2021, time.October, 10, 12, 0, 0, 0, time.UTC),
+		EndDate:      time.Date(2021, time.November, 10, 12, 0, 0, 0, time.UTC),
 	}, {
 		UserCameraID: 1,
 		FilmID:       2,
-		StartDate:    time.Date(2021, time.November, 10, 23, 0, 0, 0, time.UTC).Unix(),
-		EndDate:      time.Date(2021, time.November, 20, 23, 0, 0, 0, time.UTC).Unix(),
+		StartDate:    time.Date(2021, time.November, 10, 23, 0, 0, 0, time.UTC),
+		EndDate:      time.Date(2021, time.November, 20, 23, 0, 0, 0, time.UTC),
 	}, {
 		UserCameraID: 1,
 		FilmID:       3,
-		StartDate:    time.Now().Unix(),
-		EndDate:      0,
+		StartDate:    time.Now(),
 	}}
 
 	a.DB.Create(&userCameraFilms)
