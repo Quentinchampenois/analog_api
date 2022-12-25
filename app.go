@@ -53,6 +53,10 @@ func respondWithError(w http.ResponseWriter, statusCode int, message string) {
 	respondWithJSON(w, statusCode, map[string]string{"error": message})
 }
 
+func (a *App) respondWithAnalogError(w http.ResponseWriter, statusCode int, analogErrCode int) {
+	respondWithJSON(w, statusCode, a.ErrorRegistry.FindOrUnknown(analogErrCode))
+}
+
 func respondWithJSON(w http.ResponseWriter, statusCode int, payload interface{}) {
 	response, _ := json.Marshal(payload)
 	w.Header().Set("Content-type", "application/json")

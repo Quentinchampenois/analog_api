@@ -1,7 +1,5 @@
 package analog_err
 
-import "strconv"
-
 type ErrorRegistry struct {
 	Registry []*AnalogError
 }
@@ -19,6 +17,18 @@ func (er *ErrorRegistry) Find(code int) *AnalogError {
 	return nil
 }
 
+func (er *ErrorRegistry) FindOrUnknown(code int) *AnalogError {
+	var analogErr *AnalogError
+	if analogErr = er.Find(code); analogErr == nil {
+		analogErr = &AnalogError{
+			Code:   999,
+			Detail: "An unknown error occurred",
+		}
+	}
+
+	return analogErr
+}
+
 type AnalogError struct {
 	Code   int
 	Detail string
@@ -26,11 +36,4 @@ type AnalogError struct {
 
 func (aErr *AnalogError) Error() string {
 	return aErr.Detail
-}
-
-func (aErr *AnalogError) Display() map[string]string {
-	return map[string]string{
-		"code":  strconv.Itoa(aErr.Code),
-		"error": aErr.Error(),
-	}
 }
