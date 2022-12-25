@@ -119,7 +119,6 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) isAuthorized(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		if r.Header["Token"] == nil {
 			respondWithError(w, http.StatusUnauthorized, "No Token Found")
 			return

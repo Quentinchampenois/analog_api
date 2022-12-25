@@ -1,6 +1,8 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (a *App) initializeRoutes() {
 	cameraRouter := a.Router.PathPrefix("/camera").Subrouter()
@@ -52,11 +54,15 @@ func (a *App) initializeRoutes() {
 	userRouter.HandleFunc("/cameras/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
 	userRouter.Use(a.isAuthorized)
 
-	userCameraFilmRouter := userRouter.PathPrefix("/cameras").Subrouter()
+	userCameraFilmRouter := a.Router.PathPrefix("/camera").Subrouter()
 	userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("GET")
-	userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("POST")
 	/*
-		userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
+
+		userCameraFilmRouter := userRouter.PathPrefix("/camerad").Subrouter()
+		userCameraFilmRouter.HandleFunc("", a.getUserCameraFilms).Methods("GET")
+		userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("GET")
+		//userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.getUserCameraFilms).Methods("POST")
+			userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.deleteUserCamera).Methods("DELETE")
 	*/
 	userCameraFilmRouter.Use(a.isAuthorized)
 }

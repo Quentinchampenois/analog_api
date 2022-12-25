@@ -51,7 +51,18 @@ func (a *App) getUserCameraFilms(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	a.DB.Where("pseudo = ?", userToken.pseudo).Where("id = ?", userToken.id).First(&user)
 
+	var uc models.UserCamera
+	if err := a.DB.First(&uc, id).Error; err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if uc.UserID != int(user.ID) {
+		respondWithError(w, http.StatusUnauthorized, "Not auhtorized to perform this action")
+		return
+	}
+
 	var userCameraFilms []models.UserCameraFilm
-	a.DB.Where("user_id = ?", user.ID).Where("camera_id = ?", id).Preload("User").Preload("Film").Preload("Camera").Find(&userCameraFilms)
+	a.DB.Where("user_camera_id = ?", uc.ID).Find(&userCameraFilms)
 	respondWithJSON(w, http.StatusOK, userCameraFilms)
 }
