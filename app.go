@@ -41,6 +41,7 @@ func (a *App) Initialize() {
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 }
+
 func (a *App) Run() {
 	fmt.Printf("Listening on %v\n", a.Configs.Server.GetFullPath())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", a.Configs.Server.Port), handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Access-Control-Allow-Origin", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(a.Router)))
@@ -97,9 +98,7 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	check := checkPasswordHash(authdetails.Password, authuser.Password)
-
-	if !check {
+	if check := checkPasswordHash(authdetails.Password, authuser.Password); !check {
 		respondWithError(w, http.StatusNotFound, "User pseudo or password is invalid")
 		return
 	}
@@ -110,10 +109,11 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var token Token
-	token.Pseudo = authuser.Pseudo
-	token.Role = authuser.Role
-	token.TokenString = validToken
+	token := Token{
+		Pseudo:      authuser.Pseudo,
+		Role:        authuser.Role,
+		TokenString: validToken,
+	}
 	respondWithJSON(w, http.StatusOK, token)
 }
 
