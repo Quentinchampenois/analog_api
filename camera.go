@@ -14,8 +14,8 @@ func (a *App) getCameras(w http.ResponseWriter, r *http.Request) {
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	start, _ := strconv.Atoi(r.FormValue("start"))
 
-	if count > 10 || count < 1 {
-		count = 10
+	if count > 20 || count < 1 {
+		count = a.Configs.Application.PaginateLimit
 	}
 
 	if start < 0 {
@@ -41,7 +41,7 @@ func (a *App) createCamera(w http.ResponseWriter, r *http.Request) {
 
 	defer func(Body io.ReadCloser) {
 		if err := Body.Close(); err != nil {
-			log.Fatalln(err)
+			log.Println(err)
 		}
 	}(r.Body)
 
