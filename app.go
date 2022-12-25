@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/quentinchampenois/analog_api/analog_err"
 	"github.com/quentinchampenois/analog_api/configs"
 	"github.com/quentinchampenois/analog_api/models"
 	"golang.org/x/crypto/bcrypt"
@@ -17,10 +18,11 @@ import (
 )
 
 type App struct {
-	Router    *mux.Router
-	DB        *gorm.DB
-	Configs   configs.Config
-	JWTSecret []byte
+	Router        *mux.Router
+	DB            *gorm.DB
+	Configs       configs.Config
+	ErrorRegistry analog_err.ErrorRegistry
+	JWTSecret     []byte
 }
 
 type Authentication struct {
