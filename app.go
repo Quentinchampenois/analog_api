@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -137,13 +137,7 @@ func (a *App) isAuthorized(handler http.Handler) http.Handler {
 			return
 		}
 
-		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("there was an error in parsing")
-			}
-			return a.JWTSecret, nil
-		})
-
+		token, err := a.GetTokenFromJWT(r)
 		if err != nil {
 			a.respondWithAnalogError(w, http.StatusUnauthorized, 011)
 			return
@@ -181,6 +175,45 @@ func (a *App) generateJWT(userID uint, pseudo, role string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (a *App) GetTokenFromJWT(r *http.Request) (*jwt.Token, error) {
+	parse, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("there was an error in parsing")
+		}
+		return a.JWTSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return parse, nil
+}
+
+func (a *App) ReadJWTClaims(token *jwt.Token) (*struct {
+	id     float64
+	pseudo string
+}, error) {
+	var userToken struct {
+		id     float64
+		pseudo string
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if claims["user_id"] == nil || claims["user_id"] == "" {
+			return nil, fmt.Errorf("Missing required claims")
+		}
+		if claims["pseudo"] == nil || claims["pseudo"] == "" {
+			return nil, fmt.Errorf("Missing required claims")
+		}
+
+		userToken.id = claims["user_id"].(float64)
+		userToken.pseudo = claims["pseudo"].(string)
+	}
+
+	return &userToken, nil
 }
 
 func (a *App) EncryptedPassword(password string) (string, error) {

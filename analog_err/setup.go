@@ -51,6 +51,31 @@ func (er *ErrorRegistry) Setup() {
 		Message: "Unauthorized action",
 		Detail:  "Token is not authorized, please try to logout login.",
 		IsError: true,
+	}, {
+		Code:    013,
+		Message: "Camera not found",
+		Detail:  "The requested Camera does not exist in database",
+		IsError: true,
+	}, {
+		Code:    014,
+		Message: "User camera creation failed",
+		Detail:  "The user camera creation failed, please try again",
+		IsError: true,
+	}, {
+		Code:    015,
+		Message: "Action not authorized, this is not your resource",
+		Detail:  "The current request tries to update a resource of another user, event reported",
+		IsError: true,
+	}, {
+		Code:    016,
+		Message: "User camera deletion failed",
+		Detail:  "The user camera deletion failed, please try again",
+		IsError: true,
+	}, {
+		Code:    017,
+		Message: "User Camera not found",
+		Detail:  "The requested User Camera does not exist in database",
+		IsError: true,
 	}}
 
 	for _, aErr := range analogErrors {
