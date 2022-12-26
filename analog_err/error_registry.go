@@ -21,8 +21,9 @@ func (er *ErrorRegistry) FindOrUnknown(code int) *AnalogError {
 	var analogErr *AnalogError
 	if analogErr = er.Find(code); analogErr == nil {
 		analogErr = &AnalogError{
-			Code:   999,
-			Detail: "An unknown error occurred",
+			Code:    999,
+			Message: "Unknown error occurred",
+			Detail:  "Sorry for the inconvenient, an unexpected error occurred, we will check on this event.",
 		}
 	}
 
@@ -30,8 +31,10 @@ func (er *ErrorRegistry) FindOrUnknown(code int) *AnalogError {
 }
 
 type AnalogError struct {
-	Code   int
-	Detail string
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Detail  string `json:"detail"`
+	IsError bool   `json:"error"`
 }
 
 func (aErr *AnalogError) Error() string {

@@ -71,47 +71,53 @@ func (a *App) signUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		a.respondWithAnalogError(w, http.StatusBadRequest, 001)
 		return
 	}
 
 	if user.Pseudo == "" || user.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "Missing pseudo or password")
+		a.respondWithAnalogError(w, http.StatusBadRequest, 002)
 		return
 	}
 
 	user.Password, err = a.EncryptedPassword(user.Password)
 	if err != nil {
-		log.Fatalln("error in password hash")
+		a.respondWithAnalogError(w, http.StatusBadRequest, 003)
+		return
 	}
 
-	a.DB.Create(&user)
-	respondWithJSON(w, http.StatusOK, user)
+	if err := a.DB.Create(&user).Error; err != nil {
+		a.respondWithAnalogError(w, http.StatusBadRequest, 004)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]string{"message": "User successfully created"})
 }
 
 func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 	var authdetails Authentication
 	err := json.NewDecoder(r.Body).Decode(&authdetails)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		a.respondWithAnalogError(w, http.StatusBadRequest, 001)
 		return
 	}
 
 	var authuser models.User
-	a.DB.Where("pseudo = ?", authdetails.Pseudo).First(&authuser)
-	if authuser.Pseudo == "" {
-		respondWithError(w, http.StatusNotFound, "User not found")
+	err = a.DB.Where("pseudo = ?", authdetails.Pseudo).First(&authuser).Error
+
+	if err != nil || authuser.Pseudo == "" {
+		a.respondWithAnalogError(w, http.StatusNotFound, 005)
 		return
 	}
 
 	if check := checkPasswordHash(authdetails.Password, authuser.Password); !check {
-		respondWithError(w, http.StatusNotFound, "User pseudo or password is invalid")
+		a.respondWithAnalogError(w, http.StatusNotFound, 006)
 		return
 	}
 
 	validToken, err := a.generateJWT(authuser.ID, authuser.Pseudo, authuser.Role)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Failed to generate token")
+		a.respondWithAnalogError(w, http.StatusNotFound, 007)
 		return
 	}
 
@@ -120,13 +126,14 @@ func (a *App) signIn(w http.ResponseWriter, r *http.Request) {
 		Role:        authuser.Role,
 		TokenString: validToken,
 	}
+
 	respondWithJSON(w, http.StatusOK, token)
 }
 
 func (a *App) isAuthorized(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header["Token"] == nil {
-			respondWithError(w, http.StatusUnauthorized, "No Token Found")
+			a.respondWithAnalogError(w, http.StatusUnauthorized, 010)
 			return
 		}
 
@@ -138,7 +145,7 @@ func (a *App) isAuthorized(handler http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			respondWithError(w, http.StatusUnauthorized, "Your Token has been expired")
+			a.respondWithAnalogError(w, http.StatusUnauthorized, 011)
 			return
 		}
 
@@ -154,7 +161,7 @@ func (a *App) isAuthorized(handler http.Handler) http.Handler {
 				return
 			}
 		}
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		a.respondWithAnalogError(w, http.StatusUnauthorized, 012)
 	})
 }
 

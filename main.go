@@ -19,6 +19,7 @@ func main() {
 		},
 		ErrorRegistry: analog_err.ErrorRegistry{},
 	}
+	a.ErrorRegistry.Setup()
 	a.Initialize()
 	a.migrate()
 	a.Run()
