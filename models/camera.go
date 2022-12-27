@@ -2,7 +2,6 @@ package models
 
 import (
 	"gorm.io/gorm"
-	"log"
 )
 
 type Camera struct {
@@ -10,7 +9,7 @@ type Camera struct {
 
 	ID     int    `json:"ID"`
 	Name   string `json:"name"`
-	TypeID int    `json:"-"`
+	TypeID int    `json:"type_id"`
 	Type   Type   `json:"type"`
 	Focus  string `json:"focus"`
 }
@@ -18,9 +17,8 @@ type Camera struct {
 func GetCameras(db *gorm.DB, start, count int) ([]Camera, error) {
 	var cameras []Camera
 
-	if err := db.Preload("Type").Find(&cameras).Error; err != nil {
-		log.Fatalf("Error append in getCameras : \n%v\n", err)
-		return nil, nil
+	if err := db.Limit(count).Offset(start).Preload("Type").Find(&cameras).Error; err != nil {
+		return nil, err
 	}
 
 	return cameras, nil
@@ -42,26 +40,19 @@ func (c *Camera) CreateCamera(db *gorm.DB) bool {
 			Name: t.Name,
 		},
 	}
-	db.Create(camera)
-	db.Save(camera)
-	return true
+	return db.Create(&camera).Error == nil
 }
 
 func (c *Camera) GetCamera(db *gorm.DB, id int) bool {
 	db.Preload("Type").Find(&c, id)
 
-	if c.ID == 0 {
-		return false
-	}
-	return true
+	return !(c.ID == 0)
 }
 
 func (c *Camera) UpdateCamera(db *gorm.DB) error {
-	err := db.Save(&c).Error
-	return err
+	return db.Save(&c).Error
 }
 
 func (c *Camera) DeleteCamera(db *gorm.DB) error {
-	err := db.Delete(&c).Error
-	return err
+	return db.Delete(&c).Error
 }

@@ -44,9 +44,7 @@ func (d *Database) Connection() *gorm.DB {
 	dsn :=
 		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=Europe/paris", d.host, d.port, d.username, d.password, d.dbName)
 
-	var err error
-	var gormDb *gorm.DB
-	gormDb, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	gormDb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +53,7 @@ func (d *Database) Connection() *gorm.DB {
 }
 
 func (d *Database) getHost() string {
-	if host := os.Getenv("DB_HOST"); host != "" {
+	if host := os.Getenv("DB_HOST_NAME"); host != "" {
 		return host
 	}
 
@@ -74,5 +72,6 @@ func (d *Database) getEnvOrFail(key string) string {
 	if env := os.Getenv(key); env != "" {
 		return env
 	}
+
 	return ""
 }
