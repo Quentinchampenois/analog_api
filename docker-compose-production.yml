@@ -2,12 +2,8 @@ version: '3'
 services:
   app:
     container_name: analog_api
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: quentinchampenois/analog_api:latest
     env_file: .env
-    ports:
-      - '8080:8080'
     restart: always
     volumes:
       - api:/usr/src/app/
@@ -15,6 +11,9 @@ services:
       - postgres
     networks:
       - default
+    environment:
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
 
   postgres:
     image: postgres:latest

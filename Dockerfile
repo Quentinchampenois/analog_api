@@ -18,6 +18,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/.env .
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/analog_api .
 
 EXPOSE 8080 8080
