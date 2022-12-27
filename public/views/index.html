@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Analog API</title>
+</head>
+<body>
+<h1>Welcome on the Analog API</h1>
+<p>This API is written with Go and fully open source on the Github <a href="https://github.com/quentinchampenois/analog_api" target="_blank">official repository</a></p>
+
+<h2>Available routes :</h2>
+<b>Index</b>
+<ul>
+    <li>GET - / => Index</li>
+</ul>
+
+<b>Cameras</b>
+<ul>
+    <li>GET - /camera => Get all cameras</li>
+    <li>POST - /camera => Create new camera</li>
+    <li>GET - /camera/:id => Fetch a specific camera</li>
+    <li>PUT - /camera/:id => Update a camera</li>
+    <li>DELETE - /camera/:id => Delete a camera</li>
+</ul>
+
+<b>Types</b>
+<ul>
+    <li>GET - /type => Get all types</li>
+    <li>POST - /type => Create new type</li>
+    <li>GET - /type/:id => Fetch a specific type</li>
+    <li>PUT - /type/:id => Update a type</li>
+    <li>DELETE - /type/:id => Delete a type</li>
+</ul>
+
+<b>Films</b>
+<ul>
+    <li>GET - /film => Get all films</li>
+    <li>POST - /film => Create new film</li>
+    <li>GET - /film/:id => Fetch a specific film</li>
+    <li>PUT - /film/:id => Update a film</li>
+    <li>DELETE - /film/:id => Delete a film</li>
+</ul>
+
+<b>Authentication</b>
+<ul>
+    <li>POST - /signup => Create a new account</li>
+    <li>POST - /signin => Sign in</li>
+</ul>
+
+<b>User cameras</b>
+<ul>
+    <li>GET - /user/cameras => Get all cameras for current user</li>
+    <li>POST - /user/cameras/ => Register a new camera for current user</li>
+    <li>DELETE - /user/cameras/:id => Delete a camera for current user</li>
+</ul>
+
+<b>Camera films</b>
+<ul>
+    <li>GET - /camera/films/:id => Get all films for the given camera</li>
+    <li>POST - /camera/films => Register a new film for the camera</li>
+    <li>PUT - /camera/films/:id => Rewind film for the camera</li>
+</ul>
+</body>
+</html>

@@ -59,4 +59,6 @@ func (a *App) initializeRoutes() {
 	userCameraFilmRouter.HandleFunc("/films", a.createUserCameraFilms).Methods("POST")
 	userCameraFilmRouter.HandleFunc("/films/{id:[0-9]+}", a.rewindFilm).Methods("PUT")
 	userCameraFilmRouter.Use(a.isAuthorized)
+
+	a.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/views/")))
 }
