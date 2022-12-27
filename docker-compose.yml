@@ -2,37 +2,34 @@ version: '3'
 services:
   app:
     container_name: analog_api
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
     ports:
       - '8080:8080'
-    restart: on-failure
     volumes:
       - api:/usr/src/app/
     depends_on:
       - postgres
     networks:
-      - backend
+      - default
 
   postgres:
     image: postgres:latest
     container_name: postgres
     environment:
-      - POSTGRES_USER=${DB_USERNAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-      - DATABASE_HOST=${DB_HOST}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      DATABASE_HOST: ${DB_HOST}
     ports:
       - '5432:5432'
     volumes:
       - postgres:/var/lib/postgresql/data
     networks:
-      - backend
+      - default
 
 volumes:
   api:
   postgres:
-
-networks:
-  backend:
-    driver: bridge
-

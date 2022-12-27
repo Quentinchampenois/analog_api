@@ -53,7 +53,7 @@ func (d *Database) Connection() *gorm.DB {
 }
 
 func (d *Database) getHost() string {
-	if host := os.Getenv("DB_HOST"); host != "" {
+	if host := os.Getenv("DB_HOST_NAME"); host != "" {
 		return host
 	}
 
